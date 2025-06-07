@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RAG App</title>
+  <style>
+    body { font-family: Arial, sans-serif; horiz-align: center; padding: 1rem;}
+    .inputText {
+      width: 35rem;
+      font-size: 1.1rem;
+    }
+    .submitButton {
+      font-size: 1rem;
+      margin-left: 1rem;
+      height: 1.5rem;
+    }
+    .leftPanel {
+      .actionEntry {
+        display: flex;
+        margin-left: 2rem;
+      }
+      .uploadFileEntry {
+        display: flex;
+        margin-left: 2rem;
+        margin-top: 1rem;
+        .chooseFile {
+          width: 33.5rem;
+          padding: 1rem;
+          border: 1px gray solid;
+          .titleUpload {
+            font-weight: bold;
+            margin-right: 2rem;
+          }
+        }
+      }
+    }
+    .rightPanel {
+      width: calc(100vw - 50rem);
+      height: calc(100vh - 8rem);
+      font-size: 1.15rem;
+      margin-top: 1.5rem;
+      margin-left: 3rem;
+      padding: 1rem;
+      border: 1px gray solid;
+      border-radius: 1em;
+      overflow-y: auto;
+
+      .queryParagraph {
+        display: flex;
+        font-weight: bold;
+        font-style: italic;
+        color: forestgreen;
+        margin-bottom: -0.75rem;
+        .spanDateTime {
+            color:lightsalmon;
+            margin-right: 0.25rem;
+        }
+        .spanTrainingData {
+          color:saddlebrown;
+        }
+      }
+      .queryParagraph.add-margin-bottom {
+        margin-bottom: 1rem;
+      }
+
+      .responseParagraph {
+        display: flex;
+        margin-bottom: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div style="display: flex;">
+  <div class="leftPanel">
+    <h2 >Welcome to SRIJON GPT</h2>
+    <h3 style="margin-bottom: 0.5rem;">Query:</h3>
+    <div class="actionEntry">
+      <textarea id="queryInput" rows="4" cols="80" class="inputText" placeholder="Type your query here..."></textarea>
+      <button class="submitButton" onclick="submitQuery()">Submit</button>
+    </div>
+    <h3 style="margin-top: 4rem; margin-bottom: 0.5rem;">Train:</h3>
+    <div class="actionEntry">
+      <textarea id="trainInput" rows="4" cols="80" class="inputText" placeholder="Type your training text here..."></textarea>
+      <button class="submitButton" onclick="submitTraining()">Submit</button>
+    </div>
+    <div class="uploadFileEntry">
+      <div class="chooseFile">
+        <span class="titleUpload">Upload .txt File</span>
+        <input class="submitButton"  type="file" id="fileInput" accept=".txt" title="Choose .txt File..." >
+      </div>
+      <button class="submitButton" onclick="uploadFile()">Upload</button>
+    </div>
+  </div>
+
+  <div id="idRightPanel" class="rightPanel">
+<!--    <p class="queryParagraph">-->
+<!--      <span>Query:</span>-->
+<!--      <span id="queryText"></span>-->
+<!--    </p>-->
+<!--    <p class="responseParagraph">-->
+<!--      <span id="responseText"></span>-->
+<!--    </p>-->
+  </div>
+
+</div>
+<script>
+  const queryResponseData = [];
+  function getDateTimeString(timestamp) {
+    const aTime = new Date(timestamp);
+    return aTime.toLocaleString() + ':';
+  }
+  function  addDateTimeSpan(p, qrData) {
+    const spanTime = document.createElement('span');
+    spanTime.className = 'spanDateTime';
+    spanTime.textContent = getDateTimeString(qrData.responseTime);
+    p.appendChild(spanTime);
+  }
+  function addParagraph(rightPanel, qrData, pClassName) {
+    const p = document.createElement('p');
+    p.className = pClassName;
+    if (pClassName === 'queryParagraph') {
+      // display time stamp
+      addDateTimeSpan(p,qrData);
+    }
+    const span2 = document.createElement('span');
+    span2.textContent = pClassName === 'queryParagraph' ? qrData.query : qrData.response;
+    p.appendChild(span2);
+    rightPanel.appendChild(p);
+  }
+  function addTrainingDataParagraph(rightPanel, qrData) {
+    const p = document.createElement('p');
+    p.className = 'queryParagraph add-margin-bottom';
+      // display time stamp
+    addDateTimeSpan(p,qrData);
+
+    const spanTraining = document.createElement('span');
+    spanTraining.className= 'spanTrainingData';
+    let str1 = qrData.query.trim();
+    if (str1.length > 50) {
+      str1 = str1.substring(0,48) + '...';
+    }
+    spanTraining.textContent = '`' + str1 + '` - ' + qrData.response;
+    p.appendChild(spanTraining);
+    rightPanel.appendChild(p);
+  }
+
+  function addTrainingUploadTxtParagraph(rightPanel, qrData) {
+    const p = document.createElement('p');
+    p.className = 'queryParagraph add-margin-bottom';
+    // display time stamp
+    addDateTimeSpan(p,qrData);
+
+    const spanTraining = document.createElement('span');
+    spanTraining.className= 'spanTrainingData';
+    spanTraining.textContent = qrData.response;
+    p.appendChild(spanTraining);
+    rightPanel.appendChild(p);
+  }
+
+  function refreshQueryResponseList(responseData) {
+    const rightPanel = document.getElementById("idRightPanel");
+    rightPanel.innerHTML = '';
+    const deepCopy = JSON.parse(JSON.stringify(queryResponseData));
+    // sort by descending order of responseTime so that the latest response shows at top
+    deepCopy.sort((a, b) => b.responseTime - a.responseTime);
+    // now display all the elements from the queryResponseData
+    deepCopy.forEach((qrData) => {
+      // add query paragraph
+      if (qrData.type === 'Query') {
+        addParagraph(rightPanel, qrData, 'queryParagraph');
+        // add response paragraph
+        addParagraph(rightPanel, qrData, 'responseParagraph');
+      } else if (qrData.type === 'TrainingData') {
+        addTrainingDataParagraph(rightPanel, qrData)
+      } else if (qrData.type === 'TrainingUploadTxt') {
+        addTrainingUploadTxtParagraph(rightPanel, qrData)
+      }
+    });
+  }
+
+    // Submit RAG query
+    async function submitQuery() {
+      const text = document.getElementById('queryInput').value;
+      if (!text.length) {
+        alert('Error - empty query!');
+        return;
+      }
+      const response = await fetch('http://127.0.0.1:8000/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      const data = await response.json();
+      // document.getElementById('queryText').textContent = data.response.query;
+      // document.getElementById('responseText').textContent = data.response.result;
+      queryResponseData.push({
+        type: 'Query',
+        responseTime:  Date.now(),
+        query: data.response.query,
+        response: data.response.result
+      });
+      refreshQueryResponseList();
+      // clear input
+      document.getElementById('queryInput').innerText = '';
+    }
+
+    // Submit training data
+    async function submitTraining() {
+      const text = document.getElementById('trainInput').value;
+      if (!text.length) {
+        alert('Error - empty training text!');
+        return;
+      }
+      const response = await fetch('http://127.0.0.1:8000/train', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      const data = await response.json();
+      // document.getElementById('trainingStatus').textContent = data.status;
+      queryResponseData.push({
+        type: 'TrainingData',
+        responseTime:  Date.now(),
+        query: text,
+        response: data.status
+      });
+      refreshQueryResponseList();
+      // clear input
+      document.getElementById('trainInput').innerText = '';
+    }
+  async function uploadFile() {
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
+
+    if (!file) {
+      alert("Please select a .txt file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await response.json();
+      // document.getElementById("status").innerText = data.message;
+      queryResponseData.push({
+        type: 'TrainingUploadTxt',
+        responseTime:  Date.now(),
+        query: '',
+        response: data.message
+      });
+      refreshQueryResponseList();
+    } catch (error) {
+     alert("Upload failed!");
+      console.error("Error uploading file:", error);
+    }
+  }
+  </script>
+</body>
+</html>
