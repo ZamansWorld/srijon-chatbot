@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RAG App</title>
+  <style>
+    body { font-family: Arial, sans-serif; horiz-align: center; padding: 1rem;}
+    .leftPanel {
+      .urlTitle {
+        margin-left: 2rem;
+        font-weight: bold;
+      }
+
+      .actionEntry {
+        display: flex;
+        margin-left: 2rem;
+        margin-top: 1rem;
+
+        .inputText {
+          width: 34.5rem;
+          font-size: 1.1rem;
+          padding: 0.5rem;
+          margin-top: -1rem;
+        }
+
+        .inputTextArea {
+          width: 35rem;
+          font-size: 1.1rem;
+          margin-bottom: 1rem;
+        }
+
+        .submitButton {
+          font-size: 1rem;
+          margin-left: 1rem;
+          height: 1.5rem;
+          cursor: pointer;
+        }
+      }
+      .uploadFileEntry {
+        display: flex;
+        margin-left: 2rem;
+        margin-top: 1rem;
+        .chooseFile {
+          width: 33.5rem;
+          padding: 1rem;
+          border: 1px gray solid;
+          .titleUpload {
+            font-weight: bold;
+            margin-right: 1rem;
+          }
+
+          .buttonChooseFile {
+            font-size:  1rem;
+            height: 1.5rem;
+            cursor: pointer;
+          }
+
+          .buttonUpload {
+            font-size:  1rem;
+            margin-left: 1rem;
+            height: 1.5rem;
+            cursor: pointer;
+          }
+        }
+      }
+    }
+    .rightPanel {
+      width: calc(100vw - 50rem);
+      height: calc(100vh - 8rem);
+      font-size: 1.15rem;
+      margin-top: 1.5rem;
+      margin-left: 3rem;
+      padding: 1rem;
+      border: 1px gray solid;
+      border-radius: 1em;
+      overflow-y: auto;
+
+      .queryParagraph {
+        display: flex;
+        font-weight: bold;
+        font-style: italic;
+        color: forestgreen;
+        margin-bottom: -0.75rem;
+        .spanDateTime {
+            color:lightsalmon;
+            margin-right: 0.25rem;
+        }
+        .spanTrainingData {
+          color:saddlebrown;
+        }
+      }
+      .queryParagraph.add-margin-bottom {
+        margin-bottom: 1rem;
+      }
+
+      .responseParagraph {
+        display: flex;
+        margin-bottom: 1rem;
+        .titleResponse {
+          font-weight: bold;
+          margin-right: 0.25rem;
+        }
+      }
+      .my-div {
+        display: flex;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div style="display: flex;">
+  <div class="leftPanel">
+    <h2 >Welcome to SRIJON GPT</h2>
+    <h3 style="margin-bottom: 0.5rem;">Query:</h3>
+    <div class="actionEntry">
+      <textarea id="queryInput" rows="4" cols="80" class="inputTextArea" placeholder="Type your query here..."></textarea>
+      <button class="submitButton" onclick="submitQuery()">Submit</button>
+    </div>
+    <h3 style="margin-top: 4rem; margin-bottom: 0.5rem;">Train:</h3>
+    <div class="actionEntry">
+      <textarea id="trainInput" rows="4" cols="80" class="inputTextArea" placeholder="Type your training text here..."></textarea>
+      <button class="submitButton" onclick="submitTraining()">Submit</button>
+    </div>
+    <span class="urlTitle">Enter URL:</span>
+    <div class="actionEntry">
+      <input type="text" class="inputText" id="urlInput" placeholder="https://example.com">
+      <button class="submitButton" onclick="submitURL()">Submit</button>
+    </div>
+    <div class="uploadFileEntry">
+      <div class="chooseFile">
+        <span class="titleUpload">Upload .txt File</span>
+        <input  type="file" id="fileInputText" accept=".txt" title="Choose a .txt File..." >
+        <button class="buttonUpload" onclick="uploadTextFile()" title="Upload TXT file">Upload Text</button>
+      </div>
+    </div>
+    <div class="uploadFileEntry">
+      <div class="chooseFile">
+        <span class="titleUpload">Upload .csv File</span>
+        <input type="file" id="fileInputCsv" accept=".csv" title="Choose a .csv File..." >
+        <button class="buttonUpload" onclick="uploadCsvFile()" title="Upload CSV file">Upload CSV</button>
+      </div>
+    </div>
+    <div class="uploadFileEntry">
+      <div class="chooseFile">
+        <span class="titleUpload">Upload .pdf File</span>
+        <input  type="file" id="fileInputPdf" accept=".pdf" title="Choose a .pdf File..." >
+        <button class="buttonUpload" onclick="uploadPdfFile()" title="Upload PDF file">Upload PDF</button>
+      </div>
+    </div>
+    <div class="uploadFileEntry">
+      <div class="chooseFile">
+        <span class="titleUpload">Upload .pptx File</span>
+        <input  type="file" id="fileInputPptx" accept=".pptx" title="Choose a .pptx File..." >
+        <button class="buttonUpload" onclick="uploadPptxFile()" title="Upload PPTX file">Upload PPTX</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="idRightPanel" class="rightPanel">
+<!--    <p class="queryParagraph">-->
+<!--      <span>Query:</span>-->
+<!--      <span id="queryText"></span>-->
+<!--    </p>-->
+<!--    <p class="responseParagraph">-->
+<!--      <span id="responseText"></span>-->
+<!--    </p>-->
+  </div>
+
+</div>
+<script>
+  const queryResponseData = [];
+  function getDateTimeString(timestamp) {
+    const aTime = new Date(timestamp);
+    return aTime.toLocaleString() + ':';
+  }
+  function  addDateTimeSpan(p, qrData) {
+    const spanTime = document.createElement('span');
+    spanTime.className = 'spanDateTime';
+    spanTime.textContent = getDateTimeString(qrData.responseTime);
+    p.appendChild(spanTime);
+  }
+
+  function addMessageSpan(p, msg) {
+    const span = document.createElement('span');
+    span.textContent = msg;
+    p.appendChild(span);
+  }
+
+  function addTrainingSpan(p, msg) {
+    const spanTraining = document.createElement('span');
+    spanTraining.className= 'spanTrainingData';
+    spanTraining.textContent = msg;
+    p.appendChild(spanTraining);
+  }
+
+  function addResponseTitleSpan(p) {
+    const span = document.createElement('span');
+    span.className= 'titleResponse';
+    span.textContent = 'Response:';
+    p.appendChild(span);
+  }
+
+  function addQueryParagraph(rightPanel, qrData) {
+    const p = document.createElement('p');
+    p.className = 'queryParagraph';
+    addDateTimeSpan(p,qrData);
+    addMessageSpan(p, qrData.query);
+    rightPanel.appendChild(p);
+  }
+
+  function addResponseParagraph(rightPanel, qrData) {
+    const p = document.createElement('p');
+    p.className = 'responseParagraph';
+    // addResponseTitleSpan(p);
+    addMessageSpan(p, qrData.response);
+    rightPanel.appendChild(p);
+  }
+
+  function addTrainingDataParagraph(rightPanel, qrData) {
+    const p = document.createElement('p');
+    p.className = 'queryParagraph add-margin-bottom';
+    addDateTimeSpan(p,qrData);
+    const spanTraining = document.createElement('span');
+    spanTraining.className= 'spanTrainingData';
+    let str1 = qrData.query.trim();
+    if (str1.length > 50) {
+      str1 = str1.substring(0,48) + '...';
+    }
+    spanTraining.textContent = '`' + str1 + '` - ' + qrData.response;
+    p.appendChild(spanTraining);
+    rightPanel.appendChild(p);
+  }
+
+  function addTrainingUploadParagraph(rightPanel, qrData) {
+    const p = document.createElement('p');
+    p.className = 'queryParagraph add-margin-bottom';
+    addDateTimeSpan(p,qrData);
+    addTrainingSpan(p, qrData.response)
+    rightPanel.appendChild(p);
+  }
+
+  function refreshQueryResponseList(responseData) {
+    const rightPanel = document.getElementById("idRightPanel");
+    rightPanel.innerHTML = '';
+    const deepCopy = JSON.parse(JSON.stringify(queryResponseData));
+    // sort by descending order of responseTime so that the latest response shows at top
+    deepCopy.sort((a, b) => b.responseTime - a.responseTime);
+    // now display all the elements from the queryResponseData
+    deepCopy.forEach((qrData) => {
+      // add query paragraph
+      if (qrData.type === 'Query') {
+        addQueryParagraph(rightPanel, qrData, 'queryParagraph');
+        addResponseParagraph(rightPanel, qrData, 'responseParagraph');
+      } else if (qrData.type === 'TrainingData') {
+        addTrainingDataParagraph(rightPanel, qrData)
+      } else if (qrData.type === 'TrainingUpload') {
+        addTrainingUploadParagraph(rightPanel, qrData)
+      }
+    });
+  }
+
+    // Submit RAG query
+    async function submitQuery() {
+      const text = document.getElementById('queryInput').value;
+      if (!text.length) {
+        alert('Error - empty query!');
+        return;
+      }
+      const response = await fetch('http://127.0.0.1:8000/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      const data = await response.json();
+      // document.getElementById('queryText').textContent = data.response.query;
+      // document.getElementById('responseText').textContent = data.response.result;
+      queryResponseData.push({
+        type: 'Query',
+        responseTime:  Date.now(),
+        query: data.response.query,
+        response: data.response.result
+      });
+      refreshQueryResponseList();
+      // clear input
+      document.getElementById('queryInput').innerText = '';
+    }
+
+    // Submit training data
+    async function submitTraining() {
+      const text = document.getElementById('trainInput').value;
+      if (!text.length) {
+        alert('Error - empty training text!');
+        return;
+      }
+      const response = await fetch('http://127.0.0.1:8000/train', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      const data = await response.json();
+      // document.getElementById('trainingStatus').textContent = data.status;
+      queryResponseData.push({
+        type: 'TrainingData',
+        responseTime:  Date.now(),
+        query: text,
+        response: data.status
+      });
+      refreshQueryResponseList();
+      // clear input
+      document.getElementById('trainInput').innerText = '';
+    }
+  async function uploadTextFile() {
+    const fileInput = document.getElementById("fileInputText");
+    const file = fileInput.files[0];
+
+    if (!file) {
+      alert("Please select a .txt file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/upload_txt", {
+        method: "POST",
+        body: formData
+      });
+      const data = await response.json();
+      // document.getElementById("status").innerText = data.message;
+      queryResponseData.push({
+        type: 'TrainingUpload',
+        responseTime:  Date.now(),
+        query: '',
+        response: data.message
+      });
+      refreshQueryResponseList();
+    } catch (error) {
+     alert("Upload failed!");
+      console.error("Error uploading file:", error);
+    }
+  }
+
+  async function uploadCsvFile() {
+    const fileInput = document.getElementById("fileInputCsv");
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("Please select a CSV file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/upload_csv", {
+        method: "POST",
+        body: formData
+      });
+      const data = await response.json();
+      // document.getElementById("status").innerText = data.message;
+      queryResponseData.push({
+        type: 'TrainingUpload',
+        responseTime:  Date.now(),
+        query: '',
+        response: data.message
+      });
+      refreshQueryResponseList();
+    } catch (err) {
+      console.error("Upload csv failed:", err);
+      alert("Upload csv failed.");
+    }
+  }
+
+  async function uploadPdfFile() {
+    const fileInput = document.getElementById("fileInputPdf");
+    const file = fileInput.files[0];
+
+    if (!file) {
+      alert("Please select a PDF file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/upload_pdf", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      // document.getElementById("status").innerText = data.message;
+      queryResponseData.push({
+        type: 'TrainingUpload',
+        responseTime:  Date.now(),
+        query: '',
+        response: data.message
+      });
+      refreshQueryResponseList();
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Upload PDF failed.");
+    }
+  }
+
+  async function uploadPptxFile() {
+    const fileInput = document.getElementById("fileInputPptx");
+    const file = fileInput.files[0];
+
+    if (!file) {
+      alert("Please select a PPTX file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/upload_pptx", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      // document.getElementById("status").innerText = data.message;
+      queryResponseData.push({
+        type: 'TrainingUpload',
+        responseTime:  Date.now(),
+        query: '',
+        response: data.message
+      });
+      refreshQueryResponseList();
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Upload PPTX failed.");
+    }
+  }
+
+
+  async function submitURL() {
+    const url = document.getElementById("urlInput").value;
+    if (!url) {
+      alert("Please enter a valid URL.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("url", url);
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/train_url", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      // document.getElementById("status").innerText = data.message;
+      queryResponseData.push({
+        type: 'TrainingUpload',
+        responseTime:  Date.now(),
+        query: '',
+        response: data.message
+      });
+      refreshQueryResponseList();
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Failed to submit URL.");
+    }
+  }
+  </script>
+</body>
+</html>
