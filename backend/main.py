@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-os.environ["OPENAI_API_KEY"] = "my-key"
+# os.environ["OPENAI_API_KEY"] = "my-key" will get the API KEY from the environment
 
 # Initialize embedding and vector store
 # embedding = OpenAIEmbeddings(model="gpt-4-turbo")
