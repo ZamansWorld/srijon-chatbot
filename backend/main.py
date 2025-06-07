@@ -35,6 +35,7 @@ os.environ["OPENAI_API_KEY"] = "my-key"
 # embedding = OpenAIEmbeddings(model="gpt-4-turbo")
 # embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 # text_splitter = CharacterTextSplitter.from_tiktoken_encoder(chunk_size=300, chunk_overlap=50)
+# Added anothe comment
 embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 VECTOR_DIR = "faiss_index"
 
