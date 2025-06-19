@@ -111,6 +111,8 @@
 </head>
 <body>
 <h1>Welcome to Srijon Chatbot/Assistant</h1>
+<h3>Version: 0.4</h3>
+<br/>
 <div id="robotContainer">
     <img id="robotImage" src="./robot-image.jpg" alt="Robot" title="Srijon Assistant"/>
     <div id="popupContent">
@@ -122,13 +124,16 @@
             <div id="msgPanel" class="msgPanel"></div>
             <div id="inputField">
                 <input type="text" id="textInput" placeholder="Type your query here..." />
-                <button id="submitBtn" onclick="submitQuery()">Submit</button>
+                <button id="submitBtn" onclick="submitQuery()" >Submit</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // const remoteHost = 'http://127.0.0.1:8000';
+    const remoteHost = 'https://knlz5ijayk.execute-api.us-east-1.amazonaws.com';
+
     const queryResponseData = [];
 
     const robotContainer = document.getElementById("robotContainer");
@@ -149,25 +154,32 @@
         textInput.value = "";
     });
 
+    textInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            submitQuery();
+        }
+    });
+
     // Submit text
     async function submitQuery() {
-        const value  = document.getElementById('textInput').value;
-        console.log(value);
-        if (!value.length) {
+        const inputValue  = document.getElementById('textInput').value;
+        if (!inputValue.length) {
             alert('Error - empty query!');
             return;
         }
-        const response = await fetch('http://127.0.0.1:8000/ask', {
+        const apiUrl = remoteHost + '/ask';
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: value })
+            body: JSON.stringify({ text: inputValue })
         });
         const data = await response.json();
         console.log(data);
+        const responseValue = data.response ? data.response : data.error;
         queryResponseData.push({
             responseTime:  Date.now(),
-            query: data.response.query,
-            response: data.response.result
+            query: inputValue,
+            response: responseValue
         });
         console.log(queryResponseData);
         refreshQueryResponseList();

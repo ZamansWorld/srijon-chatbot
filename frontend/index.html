@@ -82,8 +82,8 @@
         color: forestgreen;
         margin-bottom: -0.75rem;
         .spanDateTime {
-            color:lightsalmon;
-            margin-right: 0.25rem;
+          color:lightsalmon;
+          margin-right: 0.25rem;
         }
         .spanTrainingData {
           color:saddlebrown;
@@ -158,17 +158,19 @@
   </div>
 
   <div id="idRightPanel" class="rightPanel">
-<!--    <p class="queryParagraph">-->
-<!--      <span>Query:</span>-->
-<!--      <span id="queryText"></span>-->
-<!--    </p>-->
-<!--    <p class="responseParagraph">-->
-<!--      <span id="responseText"></span>-->
-<!--    </p>-->
+    <!--    <p class="queryParagraph">-->
+    <!--      <span>Query:</span>-->
+    <!--      <span id="queryText"></span>-->
+    <!--    </p>-->
+    <!--    <p class="responseParagraph">-->
+    <!--      <span id="responseText"></span>-->
+    <!--    </p>-->
   </div>
 
 </div>
 <script>
+  // const remoteHost = 'http://127.0.0.1:8000';
+  const remoteHost = 'https://knlz5ijayk.execute-api.us-east-1.amazonaws.com';
   const queryResponseData = [];
   function getDateTimeString(timestamp) {
     const aTime = new Date(timestamp);
@@ -260,56 +262,58 @@
     });
   }
 
-    // Submit RAG query
-    async function submitQuery() {
-      const text = document.getElementById('queryInput').value;
-      if (!text.length) {
-        alert('Error - empty query!');
-        return;
-      }
-      const response = await fetch('http://127.0.0.1:8000/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
-      });
-      const data = await response.json();
-      // document.getElementById('queryText').textContent = data.response.query;
-      // document.getElementById('responseText').textContent = data.response.result;
-      queryResponseData.push({
-        type: 'Query',
-        responseTime:  Date.now(),
-        query: data.response.query,
-        response: data.response.result
-      });
-      refreshQueryResponseList();
-      // clear input
-      document.getElementById('queryInput').innerText = '';
+  // Submit RAG query
+  async function submitQuery() {
+    const text = document.getElementById('queryInput').value;
+    if (!text.length) {
+      alert('Error - empty query!');
+      return;
     }
+    const url = remoteHost + '/ask';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await response.json();
+    // document.getElementById('queryText').textContent = data.response.query;
+    // document.getElementById('responseText').textContent = data.response.result;
+    queryResponseData.push({
+      type: 'Query',
+      responseTime:  Date.now(),
+      query: data.response.query,
+      response: data.response.result
+    });
+    refreshQueryResponseList();
+    // clear input
+    document.getElementById('queryInput').innerText = '';
+  }
 
-    // Submit training data
-    async function submitTraining() {
-      const text = document.getElementById('trainInput').value;
-      if (!text.length) {
-        alert('Error - empty training text!');
-        return;
-      }
-      const response = await fetch('http://127.0.0.1:8000/train', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
-      });
-      const data = await response.json();
-      // document.getElementById('trainingStatus').textContent = data.status;
-      queryResponseData.push({
-        type: 'TrainingData',
-        responseTime:  Date.now(),
-        query: text,
-        response: data.status
-      });
-      refreshQueryResponseList();
-      // clear input
-      document.getElementById('trainInput').innerText = '';
+  // Submit training data
+  async function submitTraining() {
+    const text = document.getElementById('trainInput').value;
+    if (!text.length) {
+      alert('Error - empty training text!');
+      return;
     }
+    const url = remoteHost + '/train';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await response.json();
+    // document.getElementById('trainingStatus').textContent = data.status;
+    queryResponseData.push({
+      type: 'TrainingData',
+      responseTime:  Date.now(),
+      query: text,
+      response: data.status
+    });
+    refreshQueryResponseList();
+    // clear input
+    document.getElementById('trainInput').innerText = '';
+  }
   async function uploadTextFile() {
     const fileInput = document.getElementById("fileInputText");
     const file = fileInput.files[0];
@@ -322,8 +326,9 @@
     const formData = new FormData();
     formData.append("file", file);
 
+    const url = remoteHost + '/upload_txt';
     try {
-      const response = await fetch("http://127.0.0.1:8000/upload_txt", {
+      const response = await fetch(url, {
         method: "POST",
         body: formData
       });
@@ -337,7 +342,7 @@
       });
       refreshQueryResponseList();
     } catch (error) {
-     alert("Upload failed!");
+      alert("Upload failed!");
       console.error("Error uploading file:", error);
     }
   }
@@ -353,8 +358,9 @@
     const formData = new FormData();
     formData.append("file", file);
 
+    const url = remoteHost + '/upload_csv';
     try {
-      const response = await fetch("http://127.0.0.1:8000/upload_csv", {
+      const response = await fetch(url, {
         method: "POST",
         body: formData
       });
@@ -385,8 +391,9 @@
     const formData = new FormData();
     formData.append("file", file);
 
+    const url = remoteHost + '/upload_pdf';
     try {
-      const response = await fetch("http://127.0.0.1:8000/upload_pdf", {
+      const response = await fetch(url, {
         method: "POST",
         body: formData
       });
@@ -418,8 +425,9 @@
     const formData = new FormData();
     formData.append("file", file);
 
+    const url = remoteHost + '/upload_pptx';
     try {
-      const response = await fetch("http://127.0.0.1:8000/upload_pptx", {
+      const response = await fetch(url, {
         method: "POST",
         body: formData
       });
@@ -450,8 +458,9 @@
     const formData = new FormData();
     formData.append("url", url);
 
+    const trainUrl = remoteHost + '/train_url';
     try {
-      const response = await fetch("http://127.0.0.1:8000/train_url", {
+      const response = await fetch(trainUrl, {
         method: "POST",
         body: formData
       });
@@ -470,6 +479,6 @@
       alert("Failed to submit URL.");
     }
   }
-  </script>
+</script>
 </body>
 </html>
